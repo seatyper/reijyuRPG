@@ -1,0 +1,502 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+
+typedef struct
+{
+    char name[256];
+    int lv;
+    int HP_MAX;
+    int HP;
+    int power;
+    int defense;
+    int exp;
+    int gold;
+    int power_plusitem;
+    int defense_plusitem;
+    int break_point;
+} monster;
+
+typedef struct
+{
+    char name[256];
+    int expensive;
+    int powerup;
+    int defenseup;
+    int have;
+} item;
+
+typedef struct
+{
+    char round1[10];
+} round;
+
+monster byakko = {"白虎", 3, 50, 50, 12, 8, 0, 0, 12, 8};
+monster enemy[] = {{"ストーンドラゴン", 3, 30, 30, 16, 5, 5, 40},
+                   {"ストーンラット", 4, 25, 25, 16, 4, 4, 30},
+                   {"ストーンオーク", 6, 30, 30, 17, 2, 7, 50},
+                   {"ファイアーバード", 10, 65, 65, 37, 25, 20, 150},
+                   {"烏龍", 10, 60, 60, 38, 28, 30, 160},
+                   {"フレアゴーレム", 15, 44, 44, 35, 33, 33, 155},
+                   {"フェニックス", 20, 100, 100, 40, 22, 30, 154},
+                   {"ブループラネット", 30, 300, 300, 170, 140, 108, 420},
+                   {"ダークオーク", 30, 450, 450, 180, 110, 120, 502},
+                   {"シャイニングドラゴン", 30, 350, 350, 160, 130, 99, 380},
+                   {"ブラックラット", 30, 280, 280, 150, 150, 100, 410},
+                   {"オーシャンドワーフ", 40, 300, 300, 180, 130, 150, 400},
+                   {"玄武", 10, 120, 120, 30, 15, 50, 200, 0, 0, 0},
+                   {"朱雀", 30, 800, 800, 50, 18, 500, 500},
+                   {"青龍", 50, 2000, 2000, 250, 10, 5000, 5000},
+                   {"麒麟", 100, 7000, 7000, 400, 10, 5000, 5000}};
+item items[6] = {{"手ぶら", 0, 0, 0, 0},
+                 {"庶民一式", 300, 5, 2, 0},
+                 {"中流一式", 1000, 10, 7, 0},
+                 {"上流一式", 3000, 20, 13, 0},
+                 {"王族一式", 10000, 40, 30, 0},
+                 {"悪魔一式", 50000, 100, 80, 0}};
+round rounds[4] = {{"\0"}, {"森"}, {"火山"}, {"闇"}};
+int input;
+int i;
+int byakko_power_rand = 0;
+int enemy_power_rand = 0;
+int heal = 3;
+int gameover = 0;
+int floor_dangeon = 1;
+void battle();
+void itemshop();
+int k = 0;
+int TP = 0;
+
+int main(void)
+{
+
+    printf("お前はこの世に生まれた！名前は白虎だ。\n");
+    sleep(1);
+    printf("この世の玄武、朱雀、青龍を倒して、世界一になれ。\n");
+    sleep(1);
+    printf("さぁ、まず何をする？\n");
+    while (1)
+    {
+        for (;;)
+        {
+            printf("1:玄武のダンジョンへ 2:朱雀のダンジョンへ 3:青龍のダンジョンへ 4:アイテム屋");
+            if (enemy[15].break_point >= 1)
+                printf(" 5:天空へ");
+            printf("\n");
+            int first;
+            scanf("%d", &first);
+            switch (first)
+            {
+            case 1:
+            case 2:
+            case 3:
+                while (1)
+                {
+                    srand(time(NULL));
+                    i = rand() % (2 + first);
+                    if (first == 2)
+                        i += 3;
+                    if (first == 3)
+                        i += 7;
+                    if (floor_dangeon >= 2)
+                    {
+                        int floor_select;
+                        printf("%sは%d階への階段を見つけた！どうする？\n", byakko.name, floor_dangeon);
+                        if (floor_dangeon == 10)
+                        {
+                            sleep(1);
+                            printf("（何やら危険な香りがする…）\n");
+                        }
+                        printf("1: 進む 2: 街へ戻る\n");
+                        scanf("%d", &floor_select);
+                        if (floor_select == 1 && floor_dangeon == 10)
+                        {
+                            printf("？？「よくぞ来た%sよ！」\n", byakko.name);
+                            sleep(1);
+                            i = 11 + first;
+                            printf("我の名は%s！　返り討ちにしてやろう！\n", enemy[i].name);
+                            sleep(1);
+                            printf("%sが現れた！", enemy[i].name);
+                            while (1)
+                            {
+                                battle();
+                                enemy[i].power -= enemy_power_rand;
+                                if (gameover == 1)
+                                {
+                                    printf("？？「おお、白虎よ！生きて帰ってきたか！頑張るのだぞ」\n");
+                                    floor_dangeon = 1;
+                                    sleep(1);
+                                    break;
+                                }
+                                if (input == 4)
+                                {
+                                    enemy[i].HP = enemy[i].HP_MAX;
+                                    break;
+                                }
+                                if (enemy[i].HP <= 0)
+                                    break;
+                            }
+                            if (gameover == 1)
+                            {
+                                gameover = 0;
+                                break;
+                            }
+                            if (enemy[i].HP <= 0)
+                            {
+                                printf("お前は%sを倒した！霊獣の１匹を倒したのだ...！\n", enemy[i].name);
+                                if (enemy[12].break_point >= 1 && enemy[13].break_point >= 1 && enemy[14].break_point >= 1)
+                                {
+                                    sleep(1);
+                                    printf("何やら天高く声が聞こえる...\n");
+                                    sleep(1);
+                                    printf("？？「聞こえるか？　白虎よ。\n");
+                                    sleep(1);
+                                    printf("我は貴様が永劫、神と崇めていた存在。\n");
+                                    sleep(1);
+                                    printf("今こそ、我と戦う時が来たようだな。\n");
+                                    sleep(1);
+                                    printf("天空で待つ。全身全霊迎えてやる！！」\n");
+                                    enemy[15].break_point++;
+                                }
+                                sleep(1);
+                                enemy[i].HP = enemy[i].HP_MAX;
+                                enemy[i].break_point++;
+                                floor_dangeon = 1;
+                                break;
+                            }
+                        }
+                        else if (floor_select == 2)
+                        {
+                            printf("街へ戻ってきた…。平穏がまた白虎を訪れる。\n");
+                            floor_dangeon = 1;
+                            sleep(1);
+                            break;
+                        }
+                    }
+                    if (floor_dangeon == 10 && input == 4)
+                    {
+                        continue;
+                    }
+                    printf("%sは%sの奥へ進む！\n", byakko.name, rounds[first].round1);
+                    sleep(1);
+                    printf("%sが現れた！\n", enemy[i].name);
+                    sleep(1);
+                    while (1)
+                    {
+                        battle();
+                        enemy[i].power -= enemy_power_rand;
+                        if (gameover == 1)
+                        {
+                            printf("？？「おお、白虎よ！生きて帰ってきたか！頑張るのだぞ」\n");
+                            floor_dangeon = 1;
+                            sleep(1);
+                            break;
+                        }
+                        if (enemy[i].HP <= 0 || input == 4)
+                        {
+                            enemy[i].HP = enemy[i].HP_MAX;
+                            break;
+                        }
+                    }
+                    if (gameover == 1)
+                    {
+                        gameover = 0;
+                        break;
+                    }
+                    if (floor_dangeon == 1)
+                    {
+                        printf("まだダンジョンは１階にも関わらず、お前は逃げ出したのだ...！\n");
+                        int floor_select;
+                        sleep(1);
+                        printf("これから一体どうするのだ？\n");
+                        sleep(1);
+                        printf("1: 果敢に進む 2: 街へ戻る\n");
+                        scanf("%d", &floor_select);
+                        if (floor_select == 2)
+                        {
+                            printf("街へ戻ってきた…。平穏がまた白虎を訪れる。\n");
+                            floor_dangeon = 1;
+                            sleep(1);
+                            break;
+                        }
+                    }
+                }
+                break;
+            case 4:
+                itemshop();
+                printf("また来いよ。\n");
+                sleep(1);
+                break;
+            case 5:
+                if (enemy[15].break_point >= 1)
+                {
+                    printf("？？「よく来た、白虎よ！\n");
+                    sleep(1);
+                    printf("我が名は麒麟。霊獣の頂点に立つもの\n");
+                    sleep(1);
+                    printf("さぁ戦おう！　霊獣界の頂きをかけて！」\n");
+                    sleep(1);
+                    printf("麒麟が現れた！");
+                    i = 15;
+                    while (1)
+                    {
+                        battle();
+                        enemy[i].power -= enemy_power_rand;
+                        if (gameover == 1)
+                        {
+                            gameover = 0;
+                            printf("？？「修行が足りなかったようだな」\n");
+                            sleep(1);
+                            break;
+                        }
+                        if (enemy[i].HP <= 0)
+                        {
+                            printf("白虎...お前は戦いに勝利した...\n");
+                            sleep(2);
+                            printf("長く、険しい道のりだったであろう。\n");
+                            sleep(2);
+                            printf("もう、ゆっくり休め。そして、語り合おう。この長き戦いを！\n");
+                            sleep(2);
+                            printf("fin ~ 霊獣RPG\n");
+                            sleep(2);
+                            printf("制作：seatyper\n");
+                            sleep(2);
+                            return 0;
+                        }
+                        if (input == 4)
+                        {
+                            enemy[i].HP = enemy[i].HP_MAX;
+                            printf("なんと…お前は最終決戦で逃げ出したのだ。\n");
+                            sleep(1);
+                            printf("街へ戻ってきた…。平穏がまた白虎を訪れる。\n ");
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        };
+    }
+}
+
+void battle()
+{
+    if (byakko.HP <= 0)
+    {
+        printf("%sはHPが0になった！ 所持金が0になって街に戻される…。\n", byakko.name);
+        byakko.gold = 0;
+        gameover = 1;
+        floor_dangeon = 1;
+        byakko.HP = byakko.HP_MAX;
+        enemy[i].HP = enemy[i].HP_MAX;
+        sleep(1);
+        return;
+    }
+
+    printf("%sの現在のHP:%d\n", byakko.name, byakko.HP);
+    byakko.power_plusitem -= byakko_power_rand;
+    byakko.power_plusitem = byakko.power + items[k].powerup;
+    byakko.defense_plusitem = byakko.defense + items[k].defenseup;
+    byakko_power_rand = rand() % (byakko.power_plusitem / 5);
+    enemy_power_rand = rand() % (enemy[i].power / 5);
+    byakko.power_plusitem += byakko_power_rand;
+    enemy[i].power += enemy_power_rand;
+    if (TP > 100)
+    {
+        TP = 100;
+    }
+    printf("1:戦う 2:必殺（TP:%d) 3:回復（あと%d回）4:逃げる\n", TP, heal);
+    do
+    {
+        scanf("%d", &input);
+        if (input == 3 && heal == 0)
+        {
+            printf("回復薬がありません。\n");
+            input = 5;
+        }
+        if (input == 2 && TP < 100)
+        {
+            printf("TPが足りません。\n");
+            sleep(1);
+            printf("TPは敵のダメージを受けると溜まり、100になると必殺技が発動できます。\n");
+            sleep(1);
+            printf("1:戦う 2:必殺（TP:%d) 3:回復（あと%d回）4:逃げる\n", TP, heal);
+            input = 5;
+        }
+    } while (input != 1 && input != 2 && input != 3 && input != 4);
+    switch (input)
+    {
+    case 1:
+        if (byakko.power_plusitem - enemy[i].defense <= 0)
+        {
+            printf("%sの攻撃！\n", byakko.name);
+            sleep(1);
+            printf("ミス！%sはダメージを受けない！\n", enemy[i].name);
+            sleep(1);
+        }
+        else
+        {
+            printf("%sの攻撃！\n", byakko.name);
+            sleep(1);
+            printf("%dのダメージを与えた！\n", byakko.power_plusitem - enemy[i].defense);
+            enemy[i].HP -= (byakko.power_plusitem - enemy[i].defense);
+            sleep(1);
+        }
+    DAMAGE:
+        if (enemy[i].HP <= 0)
+        {
+            printf("%sを倒した！経験値%dを獲得！\n", enemy[i].name, enemy[i].exp);
+            sleep(1);
+            printf("%dGを手に入れた！\n", enemy[i].gold);
+            byakko.exp += enemy[i].exp;
+            byakko.gold += enemy[i].gold;
+            sleep(1);
+            if (byakko.exp >= byakko.lv * byakko.lv)
+            {
+                byakko.lv++;
+                byakko.exp = 0;
+                printf("%sはレベルが上がった！HP全回復！現在レベルは%d！\n", byakko.name, byakko.lv);
+                sleep(1);
+                byakko.HP_MAX *= 1.1;
+                byakko.power *= 1.2;
+                byakko.defense *= 1.2;
+                byakko.HP = byakko.HP_MAX;
+                printf("現在のパラメータはHP:%d、攻撃力：%d、守備力：%d\n", byakko.HP, byakko.power + items[k].powerup, byakko.defense + items[k].defenseup);
+                sleep(1);
+                floor_dangeon++;
+                return;
+            }
+            printf("次のレベルまであと%d exp\n", byakko.lv * byakko.lv - byakko.exp);
+            sleep(1);
+            floor_dangeon++;
+            return;
+        }
+        if (enemy[i].power - byakko.defense_plusitem <= 0)
+        {
+            printf("%sの攻撃！\n", enemy[i].name);
+            sleep(1);
+            printf("ミス！%sはダメージを受けない！\n", byakko.name);
+            sleep(1);
+        }
+        else
+        {
+            printf("%sの攻撃！\n", enemy[i].name);
+            sleep(1);
+            printf("%dのダメージを受けた！\n", enemy[i].power - byakko.defense_plusitem);
+            TP += enemy[i].power - byakko.defense_plusitem;
+            sleep(1);
+            byakko.HP -= (enemy[i].power - byakko.defense_plusitem);
+        }
+
+        break;
+    case 2:
+        if (enemy[i].defense - 2 * byakko.power_plusitem >= 0)
+        {
+            printf("%sは神の魂をその身に宿した！\n", byakko.name);
+            sleep(1);
+            printf("力をこめたが！\n");
+            sleep(1);
+            printf("ミス！%sはダメージを受けない！\n", byakko.name);
+            TP = 0;
+            sleep(1);
+        }
+        else
+        {
+            printf("%sは神の魂をその身に宿した！\n", byakko.name);
+            sleep(1);
+            printf("雷光一閃！\n");
+            sleep(1);
+            printf("%dのダメージを与えた！\n", 2 * byakko.power_plusitem - enemy[i].defense);
+            enemy[i].HP -= (2 * byakko.power_plusitem - enemy[i].defense);
+            TP = 0;
+            sleep(1);
+        }
+        goto DAMAGE;
+    case 3:
+        printf("おお神よ！我に大地の恵みを与えたまえ！\n");
+        sleep(1);
+        printf("%sはHPが全回復した！\n", byakko.name);
+        heal--;
+        byakko.HP = byakko.HP_MAX;
+        sleep(1);
+        goto DAMAGE;
+    case 4:
+        printf("逃げ出した！\n");
+        sleep(1);
+        return;
+    }
+}
+
+void itemshop(void)
+{
+    printf("？？？「いらっしゃい、色々あるぜ」\n");
+    for (k = 1; k < 6; k++)
+    {
+        if (items[k].have == 1)
+        {
+            printf("現在の装備：%s\n", items[k].name);
+            break;
+        }
+    }
+    if (k == 6)
+    {
+        printf("現在は装備を持っていません\n");
+        k = 0;
+    }
+    printf("現在の所持金：%dG\n", byakko.gold);
+    int select_item = 0;
+    for (int j = 1; j < 6; j++)
+    {
+        printf("%d: 「%s」%d円。攻撃力%d、守備力%d\n", j, items[j].name, items[j].expensive, items[j].powerup, items[j].defenseup);
+    }
+    printf("6: さようなら\n");
+    printf("買いたいアイテムの番号を入力してくれ。\n");
+    while (1)
+    {
+        scanf("%d", &select_item);
+        if (select_item >= 6 || select_item <= 0)
+            return;
+        if (byakko.gold < items[select_item].expensive)
+        {
+            printf("おいおい、金が足りねぇよ。やってらんねぇぜ\n");
+            sleep(1);
+            return;
+        }
+        if ((byakko.power_plusitem - byakko.power) >= items[select_item].powerup)
+        {
+            printf("おいおい、今の装備の方が強いぜ？いいのか？\n");
+            sleep(1);
+            printf("1: はい 2: いいえ\n");
+            int itemok;
+            scanf("%d", &itemok);
+            switch (itemok)
+            {
+            case 1:
+                printf("OK。古い武器は捨てといたぜ。\n");
+                byakko.power_plusitem = (byakko.power_plusitem - items[k].powerup + items[select_item].powerup);
+                byakko.defense_plusitem = (byakko.defense_plusitem - items[k].defenseup + items[select_item].defenseup);
+                items[k].have = 0;
+                byakko.gold -= items[select_item].expensive;
+                items[select_item].have = 1;
+                k = select_item;
+                sleep(1);
+                return;
+            case 2:
+                return;
+            }
+        }
+        else
+        {
+            printf("へへ、毎度。\n");
+            byakko.power_plusitem = (byakko.power_plusitem - items[k].powerup + items[select_item].powerup);
+            byakko.defense_plusitem = (byakko.defense_plusitem - items[k].defenseup + items[select_item].defenseup);
+            items[k].have = 0;
+            byakko.gold -= items[select_item].expensive;
+            items[select_item].have = 1;
+            k = select_item;
+            sleep(1);
+            return;
+        }
+    }
+}
